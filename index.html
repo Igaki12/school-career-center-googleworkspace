@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進路調査票発行システム デモ</title>
+    <!-- Font Awesome CDN (アイコン表示のため) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        /* --- CSS Start --- */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+
+        :root {
+            --primary-color: #4285F4; /* Google Blue */
+            --secondary-color: #34A853; /* Google Green */
+            --accent-color: #FBBC05; /* Google Yellow */
+            --danger-color: #EA4335; /* Google Red */
+            --bg-gradient: linear-gradient(135deg, #e0f7fa 0%, #e8eaf6 100%);
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --sub-text-color: #555;
+            --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            --card-hover-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            overflow-x: hidden; /* 横スクロール防止 */
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+            opacity: 0; /* 初期状態は透明 */
+            transform: translateY(30px); /* 初期状態は下にずらす */
+            animation: fadeInSlideUp 1s ease-out forwards; /* アニメーション適用 */
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .hero h1 .rocket { /* .rocket クラスを追加 */
+            display: inline-block;
+            animation: rocketFly 2s ease-in-out infinite alternate; /* ロケットアニメーション */
+        }
+
+        @keyframes rocketFly {
+            from { transform: translateY(0) rotate(-5deg); }
+            to { transform: translateY(-10px) rotate(5deg); }
+        }
+
+
+        .hero h2 {
+            font-size: 2rem;
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--sub-text-color);
+        }
+
+        .process-flow {
+            display: flex;
+            flex-wrap: wrap; /* 折り返しを許可 */
+            justify-content: center;
+            align-items: center;
+            gap: 30px; /* 要素間のスペース */
+            margin-bottom: 60px;
+        }
+
+        .step, .step-group {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            flex: 1; /* 基本の幅 */
+            min-width: 220px; /* 最小幅 */
+            max-width: 280px; /* 最大幅 */
+            opacity: 0;
+            transform: translateY(50px); /* アニメーション用に初期位置を下に */
+        }
+
+        /* JavaScriptで is-visible クラスが付与されたらアニメーション実行 */
+        .step.is-visible, .step-group.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .step:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .step-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            height: 60px; /* アイコンサイズ変動に対応 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .step-icon i {
+            transition: transform 0.3s ease;
+        }
+        .step:hover .step-icon i {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .step h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .step h4 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--text-color);
+        }
+
+        .step p {
+            font-size: 0.95rem;
+            color: var(--sub-text-color);
+            line-height: 1.6;
+        }
+
+        .sub-icons {
+            margin-top: 15px;
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+        }
+
+        .sub-icons i {
+            margin: 0 8px;
+        }
+
+        /* アラートとリマインダー用ステップ */
+        .step-group {
+            display: flex;
+            flex-direction: column; /* 縦に並べる */
+            gap: 15px;
+            padding: 20px; /* 少し小さめ */
+            background: none; /* 背景なし */
+            box-shadow: none;
+            min-width: auto; /* 幅調整 */
+            max-width: none;
+            opacity: 0;
+            transform: translateY(50px);
+            /* is-visible は継承 */
+        }
+        .step.small {
+            padding: 20px;
+            min-width: 180px;
+            flex: none; /* 自動伸長しない */
+             opacity: 1; /* step-group が表示されたら常に表示 */
+             transform: translateY(0); /* step-group が表示されたら常に表示 */
+             transition: transform 0.3s ease, box-shadow 0.3s ease; /* ホバー用トランジションのみ */
+        }
+         /* small step 用に is-visible をリセット */
+        .step.small:not(.is-visible) {
+             opacity: 1;
+             transform: translateY(0);
+        }
+
+
+        .alert-step .step-icon { color: var(--danger-color); }
+        .reminder-step .step-icon { color: var(--accent-color); }
+
+        /* 矢印 */
+        .arrow {
+            font-size: 2rem;
+            color: var(--secondary-color);
+            opacity: 0;
+            transform: scale(0.5); /* 初期状態は小さく */
+            margin: 0 10px; /* 左右のスペース */
+            flex-shrink: 0; /* 縮まないように */
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out; /* アニメーション用 */
+        }
+        .arrow.down {
+            writing-mode: vertical-rl; /* 縦書きモードを利用 */
+            transform: rotate(180deg) scale(0.5); /* 上下反転 + 初期状態 */
+            margin: 15px 0; /* 上下のスペース */
+            width: 100%; /* 中央寄せのため幅を100% */
+            text-align: center;
+        }
+
+        /* JavaScriptで is-visible クラスが付与されたらアニメーション実行 */
+        .arrow.is-visible {
+            opacity: 1;
+            transform: scale(1); /* 通常サイズに戻す */
+        }
+        .arrow.down.is-visible {
+            transform: rotate(180deg) scale(1); /* 通常サイズに戻す */
+        }
+
+        .conclusion {
+            text-align: center;
+            margin-top: 60px;
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out; /* アニメーション用 */
+        }
+
+        .conclusion.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .conclusion h3 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .conclusion p {
+            font-size: 1.1rem;
+            color: var(--sub-text-color);
+        }
+
+        /* フェードイン＆スライドアップ アニメーション */
+        @keyframes fadeInSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 992px) {
+            .process-flow {
+                flex-direction: column; /* 縦並びに変更 */
+                align-items: center; /* 中央揃え */
+                gap: 20px;
+            }
+            .arrow {
+                transform: rotate(90deg) scale(0.5); /* 矢印を縦向きに */
+                margin: 10px 0;
+            }
+            .arrow.down {
+                transform: scale(0.5); /* 通常の下向き矢印に戻す */
+                writing-mode: initial; /* 通常の横書き */
+                 margin: 10px 0; /* 上下のスペース */
+                 width: auto; /* 幅リセット */
+                 text-align: center; /* 中央寄せ維持 */
+            }
+
+            /* 表示されたときのアニメーション */
+            .arrow.is-visible {
+                transform: rotate(90deg) scale(1);
+            }
+            .arrow.down.is-visible {
+                transform: scale(1); /* 下向き矢印のままスケール */
+            }
+
+            .step {
+                min-width: 80%; /* 幅を広げる */
+                max-width: 400px;
+            }
+            .step-group {
+                flex-direction: row; /* 横並びに戻す */
+                justify-content: center;
+                gap: 20px;
+                width: 80%;
+                max-width: 400px; /* stepと同じ幅に */
+                background: none;
+                box-shadow: none;
+                padding: 0; /* パディングリセット */
+            }
+            .step.small {
+                min-width: 150px;
+                /* small step固有のスタイルは維持 */
+                background-color: var(--card-bg);
+                box-shadow: var(--card-shadow);
+                padding: 20px;
+                border-radius: 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            .hero h2 {
+                font-size: 1.6rem;
+            }
+            .step-group {
+                flex-direction: column; /* 再度縦並びに */
+                align-items: center;
+                 width: 80%;
+                 max-width: 400px;
+                 gap: 20px;
+            }
+            .step.small {
+                width: 100%; /* 縦並び時に幅を合わせる */
+                min-width: unset; /* 最小幅解除 */
+            }
+        }
+
+        /* アニメーションの基本設定（JSで制御するため） */
+        .animated {
+            /* is-visible クラス付与時のトランジション */
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        /* --- CSS End --- */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="hero">
+             <h1><span class="rocket">🚀</span> Google Workspaceで実現する</h1>
+            <h2>進路調査票発行システム</h2>
+            <p>申請から発行までのプロセスをスマートに自動化</p>
+        </header>
+
+        <div class="process-flow">
+            <!-- Step 1: Google Form -->
+            <div class="step animated">
+                <div class="step-icon"><i class="fas fa-clipboard-list"></i></div>
+                <h3>Step 1: 希望入力</h3>
+                <p>生徒がGoogle Formで<br>進路希望を簡単入力</p>
+            </div>
+
+            <div class="arrow animated"><i class="fas fa-arrow-right"></i></div>
+
+            <!-- Step 2: Spreadsheet -->
+            <div class="step animated">
+                <div class="step-icon"><i class="fas fa-table"></i></div>
+                <h3>Step 2: データ集約・管理</h3>
+                <p>Google Spreadsheetで<br>情報を一元管理・進捗確認</p>
+            </div>
+
+            <div class="arrow animated"><i class="fas fa-arrow-right"></i></div>
+
+            <!-- Step 3: Automation & Notification -->
+            <div class="step animated">
+                <div class="step-icon"><i class="fas fa-cogs"></i></div>
+                <h3>Step 3: 自動化 & 通知</h3>
+                <p>GASがステータス変更を検知<br>Gmailで関係者へ自動通知</p>
+                <div class="sub-icons">
+                    <i class="fab fa-google"></i> <!-- Apps Script -->
+                    <i class="fas fa-envelope"></i> <!-- Gmail -->
+                </div>
+            </div>
+
+             <!-- 縦並び用コンテナ -->
+             <div class="step-group-wrapper animated"> <!-- wrapperにanimatedクラス追加 -->
+                <!-- Step 4: Alert & Reminder (縦並びグループ) -->
+                <div class="step-group"> <!-- ここからstep-group -->
+                    <div class="step small alert-step"> <!-- ここは .animated 不要 -->
+                        <div class="step-icon"><i class="fas fa-bell"></i></div>
+                        <h4>滞留アラート</h4>
+                        <p>放置案件を自動検知<br>セルをハイライト</p>
+                    </div>
+                    <div class="step small reminder-step"> <!-- ここも .animated 不要 -->
+                        <div class="step-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <h4>リマインダー</h4>
+                        <p>担当者へ<br>自動で催促メール</p>
+                    </div>
+                </div> <!-- ここまで step-group -->
+            </div>
+
+
+            <div class="arrow down animated"><i class="fas fa-arrow-down"></i></div>
+
+
+            <!-- Step 5: Issue & Upload -->
+            <div class="step animated">
+                <div class="step-icon"><i class="fas fa-file-invoice"></i></div>
+                <h3>Step 4: 調査票発行</h3>
+                <p>教職員が調査票を発行</p>
+            </div>
+
+            <div class="arrow animated"><i class="fas fa-arrow-right"></i></div>
+
+            <!-- Step 6: Google Drive -->
+            <div class="step animated">
+                 <div class="step-icon"><i class="fab fa-google-drive"></i></div>
+                 <h3>Step 5: Driveへ格納</h3>
+                 <p>発行済みデータを<br>Google Driveへ自動保存</p>
+            </div>
+
+             <div class="arrow animated"><i class="fas fa-arrow-right"></i></div>
+
+            <!-- Step 7: Link Update -->
+            <div class="step animated">
+                 <div class="step-icon"><i class="fas fa-link"></i></div>
+                 <h3>Step 6: リンク追加</h3>
+                 <p>Spreadsheetに<br>データへのリンクを自動追加</p>
+            </div>
+        </div>
+
+        <footer class="conclusion animated">
+            <h3>✨ 導入メリット ✨</h3>
+            <p>業務効率化 | ミス防止 | ペーパーレス | データ活用</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- JavaScript Start ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Intersection Observerの設定
+            const observerOptions = {
+                root: null, // ビューポートをルートとする
+                rootMargin: '0px',
+                threshold: 0.1 // 10%表示されたら発火
+            };
+
+            // Intersection Observerのコールバック関数
+            const observerCallback = (entries, observer) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        // 要素が表示されたら is-visible クラスを追加してアニメーション発火
+                        // アニメーションの遅延はCSS側で行うか、要素ごとにdata属性で指定するなど多様な方法があるが、
+                        // ここでは単純に is-visible を付与する
+                         entry.target.classList.add('is-visible');
+
+                        // 一度表示されたら監視を解除（オプション）
+                        observer.unobserve(entry.target);
+                    }
+                });
+            };
+
+            // Intersection Observerのインスタンスを作成
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+            // .animated クラスを持つすべての要素を監視対象にする
+            // ただし、.step.small は親の .step-group が表示されたら表示されるように調整
+            const animatedElements = document.querySelectorAll('.animated:not(.step.small)');
+            animatedElements.forEach((el, index) => {
+                 // 各要素に遅延スタイルを設定 (インラインスタイルよりはクラスや data-* 属性が良いが、簡易的に)
+                 el.style.transitionDelay = `${index * 0.15}s`;
+                 observer.observe(el);
+            });
+
+             // .step-group を監視し、表示されたら中の .step.small を表示
+             const stepGroups = document.querySelectorAll('.step-group-wrapper.animated'); // wrapperを監視
+             stepGroups.forEach((groupWrapper, index) => {
+                 groupWrapper.style.transitionDelay = `${(document.querySelectorAll('.step.animated').length + index) * 0.15}s`; // 他の要素の後に遅延
+                 const groupObserver = new IntersectionObserver((entries) => {
+                     entries.forEach(entry => {
+                         if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible'); // wrapperを表示
+                             // 中の small step は is-visible なしで表示されるようにCSS調整済み
+                             groupObserver.unobserve(entry.target);
+                         }
+                     });
+                 }, observerOptions);
+                 groupObserver.observe(groupWrapper);
+             });
+
+
+            // ヒーローセクションは最初からアニメーション (CSS側で@keyframes適用済み)
+
+             // Conclusion (フッター) の監視
+            const conclusion = document.querySelector('.conclusion.animated');
+             if (conclusion) {
+                conclusion.style.transitionDelay = `${(animatedElements.length + stepGroups.length) * 0.15}s`; // 最後の要素の後に遅延
+                observer.observe(conclusion);
+            }
+
+        });
+        // --- JavaScript End ---
+    </script>
+</body>
+</html>
